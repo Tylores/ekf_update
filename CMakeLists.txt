@@ -15,17 +15,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(FetchContent)
-FetchContent_Declare(
-  SuiteSparse
-  GIT_REPOSITORY https://github.com/DrTimothyAldenDavis/SuiteSparse.git
-  GIT_TAG v7.8.2)
+find_package(SuiteSparse)
+if(NOT SuiteSparse_FOUND)
+  FetchContent_Declare(
+    SuiteSparse
+    GIT_REPOSITORY https://github.com/DrTimothyAldenDavis/SuiteSparse.git
+    GIT_TAG v7.8.2)
+  FetchContent_MakeAvailable(SuiteSparse)
+endif(NOT SuiteSparse_FOUND)
 
-FetchContent_Declare(
-  json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.3)
-
-FetchContent_MakeAvailable(SuiteSparse json)
+find_package(json)
+if(NOT nlohmann_json_FOUND)
+  FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3)
+  FetchContent_MakeAvailable(nlohmann_json)
+endif(NOT nlohmann_json_FOUND)
 
 add_subdirectory(libs)
 add_subdirectory(state_estimator)
