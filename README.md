@@ -6,7 +6,7 @@ Trying to rewrite ekf with more modern c++
 ```shell
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y liblapack-dev libblas-dev libmpfr-dev, libgmp-dev
+sudo apt install -y liblapack-dev libblas-dev libmpfr-dev libgmp-dev
 ```
 
 ## Build
