@@ -1,15 +1,9 @@
 #include <cs.h>
+#include <stdio.h>
 
 struct Problem {
-  Problem() {};
-  ~Problem() {
-    cs_ci_spfree(A);
-    cs_ci_spfree(C);
-    cs_ci_free(x);
-    cs_ci_free(b);
-    cs_ci_free(resid);
-  };
-
+  Problem();
+  ~Problem();
   cs_ci *A;
   cs_ci *C;
   int sym;
@@ -18,4 +12,6 @@ struct Problem {
   cs_complex_t *resid;
 };
 
+Problem *getProblem(FILE *file, float tol);
+Problem *freeProblem(Problem *problem);
 int solve(Problem *problem);

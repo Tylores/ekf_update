@@ -2,6 +2,27 @@
 #include <ekf/ekf.hpp>
 #include <time.h>
 
+Problem::Problem() {
+  cs_ci *A;
+  cs_ci *C;
+  cs_complex_t *x;
+  cs_complex_t *b;
+  cs_complex_t *resid;
+  this->A = A;
+  this->C = C;
+  this->x = x;
+  this->b = b;
+  this->resid = resid;
+}
+
+Problem::~Problem() {
+  cs_ci_spfree(A);
+  cs_ci_spfree(C);
+  cs_ci_free(x);
+  cs_ci_free(b);
+  cs_ci_free(resid);
+}
+
 /* 1 if A is square & upper tri., -1 if square & lower tri., 0 otherwise */
 static int is_sym(cs_ci *A) {
   int is_upper, is_lower, j, p, n = A->n, m = A->m, *Ap = A->p, *Ai = A->i;
@@ -93,6 +114,52 @@ static void print_order(int order) {
     printf("amd(A'*A)  ");
     break;
   }
+}
+
+Problem *getProblem(FILE *file, float tol) {
+  cs_ci *T, *A, *C;
+  int sym, m, n, mn, nz1, nz2;
+  Problem *Prob = new Problem();
+  if (!Prob)
+    return (NULL);
+  T = cs_ci_load(file);            /* load triplet matrix T from a file */
+  Prob->A = A = cs_ci_compress(T); /* A = compressed-column form of T */
+  cs_ci_spfree(T);                 /* clear T */
+  if (!cs_ci_dupl(A))
+    return (freeProblem(Prob)); /* sum up duplicates */
+  Prob->sym = sym = is_sym(A);  /* determine if A is symmetric */
+  m = A->m;
+  n = A->n;
+  mn = CS_MAX(m, n);
+  nz1 = A->p[n];
+  cs_ci_dropzeros(A); /* drop zero entries */
+  nz2 = A->p[n];
+  if (tol > 0)
+    cs_ci_droptol(A, tol);             /* drop tiny entries (just to test) */
+  Prob->C = C = sym ? make_sym(A) : A; /* C = A + triu(A,1)', or C=A */
+  if (!C)
+    return (freeProblem(Prob));
+  printf("\n--- Matrix: %g-by-%g, nnz: %g (sym: %g: nnz %g), norm: %8.2e\n",
+         (double)m, (double)n, (double)(A->p[n]), (double)sym,
+         (double)(sym ? C->p[n] : 0), cs_ci_norm(C));
+  if (nz1 != nz2)
+    printf("zero entries dropped: %g\n", (double)(nz1 - nz2));
+  if (nz2 != A->p[n])
+    printf("tiny entries dropped: %g\n", (double)(nz2 - A->p[n]));
+  return ((!Prob->b || !Prob->x || !Prob->resid) ? freeProblem(Prob) : Prob);
+}
+
+/* free a problem */
+Problem *freeProblem(Problem *Prob) {
+  if (!Prob)
+    return new Problem();
+  cs_ci_spfree(Prob->A);
+  if (Prob->sym)
+    cs_ci_spfree(Prob->C);
+  cs_ci_free(Prob->b);
+  cs_ci_free(Prob->x);
+  cs_ci_free(Prob->resid);
+  return Prob;
 }
 
 int solve(Problem *problem) {
